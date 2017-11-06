@@ -1,0 +1,129 @@
+# This playbook will download and compile makeMKV and build non-distributive software package
+# http://www.makemkv.com/forum2/viewtopic.php?f=3&t=224
+
+# How to use it:
+# 1) Use freshly installed and updated Ubuntu Desktop 16.04 workstation or VM (gold)
+# 2) Run 'ansible-playbook build-makeMKV.yml -v'.
+# 3) Download the new 'makemkv-bin_1.10.7-1_amd64.deb' and 'makemkv-oss_1.10.7-1_amd64.deb'
+
+# TODO: Replace hard coded version strings with configuration option.
+# TODO: Automaticly download the new deb files.
+# TODO: Add option to use Ubuntu FFMPEG libraries or build from ffmpeg.org's source.
+# TODO: Fix the .deb meta data and dependancies.
+
+# Version: 1.0
+- name: Build makeMKV app on Ubuntu
+  hosts: makemkv
+  become: yes
+  tasks:
+    - name: Install 'build-essential' package
+      apt:
+        name: build-essential
+        update_cache: yes
+
+    - name: Install 'pkg-config' package
+      apt:
+        name: pkg-config
+        update_cache: yes
+
+    - name: Install 'libc6-dev' package
+      apt:
+        name: libc6-dev
+        update_cache: yes
+
+    - name: Install 'libssl-dev' package
+      apt:
+        name: libssl-dev
+        update_cache: yes
+
+    - name: Install 'libexpat1-dev' package
+      apt:
+        name: libexpat1-dev
+        update_cache: yes
+
+    # Install this library if not staticly link newer version of libavcodec from ffmpeg.org
+    # - name: Install 'libavcodec-dev' package
+    #   apt:
+    #     name: libavcodec-dev
+    #     update_cache: yes
+
+    - name: Install 'libgl1-mesa-dev' package
+      apt:
+        name: libgl1-mesa-dev
+        update_cache: yes
+
+    - name: Install 'libqt4-dev' package
+      apt:
+        name: libqt4-dev
+        update_cache: yes
+
+    - name: Install 'libfdk-aac-dev' package
+      apt:
+        name: libfdk-aac-dev
+        update_cache: yes
+
+    - name: Install 'checkinstall' package
+      # https://help.ubuntu.com/community/CheckInstall
+      apt:
+        name: checkinstall
+        update_cache: yes
+
+    - name: Download ffmpeg-3.2.8
+      unarchive:
+        src: https://ffmpeg.org/releases/ffmpeg-3.2.8.tar.bz2
+        dest: /tmp/
+        remote_src: yes
+
+    - name: Download makemkv-bin-1.10.7
+      unarchive:
+        src: http://www.makemkv.com/download/makemkv-bin-1.10.7.tar.gz
+        dest: /tmp/
+        remote_src: yes
+
+    - name: Download makemkv-oss-1.10.7
+      unarchive:
+        src: http://www.makemkv.com/download/makemkv-oss-1.10.7.tar.gz
+        dest: /tmp/
+        remote_src: yes
+
+    - name: Configure ffmpeg-3.2.8 build
+      shell: ./configure --prefix=/tmp/ffmpeg --enable-static --disable-shared --enable-pic --disable-yasm --enable-libfdk-aac
+      args:
+        chdir: /tmp/ffmpeg-3.2.8
+
+    - name: Build and install ffmpeg-3.2.8
+      shell: make install
+      args:
+        chdir: /tmp/ffmpeg-3.2.8
+
+    - name: Configure makemkv-oss-1.10.7 build
+      shell: PKG_CONFIG_PATH=/tmp/ffmpeg/lib/pkgconfig ./configure
+      args:
+        chdir: /tmp/makemkv-oss-1.10.7
+        executable: /bin/bash
+
+    - name: Build makemkv-oss-1.10.7
+      shell: make
+      args:
+        chdir: /tmp/makemkv-oss-1.10.7
+
+    - name: Create makemkv-oss-1.10.7 package
+      # https://stackoverflow.com/questions/18365600/how-to-manage-multiple-package-dependencies-with-checkinstall
+      shell: checkinstall -y --requires="libfdk-aac0" make install
+      args:
+        chdir: /tmp/makemkv-oss-1.10.7
+
+    - name: Create 'tmp' directory in makemkv-bin-1.10.7
+      file:
+        path: /tmp/makemkv-bin-1.10.7/tmp
+        state: directory
+
+    - name: Accept makemkv-bin-1.10.7 EULA
+      copy:
+        content: "accepted"
+        dest: /tmp/makemkv-bin-1.10.7/tmp/eula_accepted
+
+    - name: Create makemkv-bin-1.10.7 package
+      shell: checkinstall -y make install
+      args:
+        chdir: /tmp/makemkv-bin-1.10.7
