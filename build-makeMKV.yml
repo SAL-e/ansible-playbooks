@@ -4,7 +4,7 @@
 # How to use it:
 # 1) Use freshly installed and updated Ubuntu Desktop 16.04 workstation or VM (gold)
 # 2) Run 'ansible-playbook build-makeMKV.yml -v'.
-# 3) Download the new 'makemkv-bin_1.10.7-1_amd64.deb' and 'makemkv-oss_1.10.7-1_amd64.deb'
+# 3) Download the new 'makemkv-bin_1.10.8-1_amd64.deb' and 'makemkv-oss_1.10.8-1_amd64.deb'
 
 # TODO: Replace hard coded version strings with configuration option.
 # TODO: Automaticly download the new deb files.
@@ -68,62 +68,62 @@
         name: checkinstall
         update_cache: yes
 
-    - name: Download ffmpeg-3.2.8
+    - name: Download ffmpeg-3.2.9
       unarchive:
-        src: https://ffmpeg.org/releases/ffmpeg-3.2.8.tar.bz2
+        src: https://ffmpeg.org/releases/ffmpeg-3.2.9.tar.bz2
         dest: /tmp/
         remote_src: yes
 
-    - name: Download makemkv-bin-1.10.7
+    - name: Download makemkv-bin-1.10.8
       unarchive:
-        src: http://www.makemkv.com/download/makemkv-bin-1.10.7.tar.gz
+        src: http://www.makemkv.com/download/makemkv-bin-1.10.8.tar.gz
         dest: /tmp/
         remote_src: yes
 
-    - name: Download makemkv-oss-1.10.7
+    - name: Download makemkv-oss-1.10.8
       unarchive:
-        src: http://www.makemkv.com/download/makemkv-oss-1.10.7.tar.gz
+        src: http://www.makemkv.com/download/makemkv-oss-1.10.8.tar.gz
         dest: /tmp/
         remote_src: yes
 
-    - name: Configure ffmpeg-3.2.8 build
+    - name: Configure ffmpeg-3.2.9 build
       shell: ./configure --prefix=/tmp/ffmpeg --enable-static --disable-shared --enable-pic --disable-yasm --enable-libfdk-aac
       args:
-        chdir: /tmp/ffmpeg-3.2.8
+        chdir: /tmp/ffmpeg-3.2.9
 
-    - name: Build and install ffmpeg-3.2.8
+    - name: Build and install ffmpeg-3.2.9
       shell: make install
       args:
-        chdir: /tmp/ffmpeg-3.2.8
+        chdir: /tmp/ffmpeg-3.2.9
 
-    - name: Configure makemkv-oss-1.10.7 build
+    - name: Configure makemkv-oss-1.10.8 build
       shell: PKG_CONFIG_PATH=/tmp/ffmpeg/lib/pkgconfig ./configure
       args:
-        chdir: /tmp/makemkv-oss-1.10.7
+        chdir: /tmp/makemkv-oss-1.10.8
         executable: /bin/bash
 
-    - name: Build makemkv-oss-1.10.7
+    - name: Build makemkv-oss-1.10.8
       shell: make
       args:
-        chdir: /tmp/makemkv-oss-1.10.7
+        chdir: /tmp/makemkv-oss-1.10.8
 
-    - name: Create makemkv-oss-1.10.7 package
+    - name: Create makemkv-oss-1.10.8 package
       # https://stackoverflow.com/questions/18365600/how-to-manage-multiple-package-dependencies-with-checkinstall
       shell: checkinstall -y --requires="libfdk-aac0" make install
       args:
-        chdir: /tmp/makemkv-oss-1.10.7
+        chdir: /tmp/makemkv-oss-1.10.8
 
-    - name: Create 'tmp' directory in makemkv-bin-1.10.7
+    - name: Create 'tmp' directory in makemkv-bin-1.10.8
       file:
-        path: /tmp/makemkv-bin-1.10.7/tmp
+        path: /tmp/makemkv-bin-1.10.8/tmp
         state: directory
 
-    - name: Accept makemkv-bin-1.10.7 EULA
+    - name: Accept makemkv-bin-1.10.8 EULA
       copy:
         content: "accepted"
-        dest: /tmp/makemkv-bin-1.10.7/tmp/eula_accepted
+        dest: /tmp/makemkv-bin-1.10.8/tmp/eula_accepted
 
-    - name: Create makemkv-bin-1.10.7 package
+    - name: Create makemkv-bin-1.10.8 package
       shell: checkinstall -y make install
       args:
-        chdir: /tmp/makemkv-bin-1.10.7
+        chdir: /tmp/makemkv-bin-1.10.8
